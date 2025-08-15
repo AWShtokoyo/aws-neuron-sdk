@@ -49,7 +49,7 @@ For Llama-3-8B:
    wget https://raw.githubusercontent.com/aws-neuron/neuronx-distributed/master/examples/training/llama/tp_zero1_llama_hf_pretrain/8B_config_llama3/config.json ~/
 
 
-Download pretrained model checkpoint and tokenizer
+Download the tokenizer
 --------------------------------------------------
 
 To tokenize the data, we must request the tokenizer from Hugging Face and Meta by following the
