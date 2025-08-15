@@ -34,6 +34,13 @@ Next, we will need to install ``NxDT`` and its dependencies.
 Please see the following installation guide for installing ``NxDT``:
 :ref:`NxDT Installation Guide <nxdt_installation_guide>`.
 
+Then, clone the open-source ``neuronx-distributed-training`` library
+
+.. code:: ipython3
+
+   cd ~/
+   git clone https://github.com/aws-neuron/neuronx-distributed-training
+
 
 Download the dataset
 --------------------
@@ -76,7 +83,10 @@ If you choose to download the weights from HuggingFace with your own token, you 
 
 .. code-block:: python
 
+    from huggingface_hub import login
     import transformers
+
+    login(token='your_own_hugging_face_token')
 
     tokenizer_path="llama3_tokenizer"
     model_weights_path="llama3-8B_hf_weights"
@@ -86,9 +96,40 @@ If you choose to download the weights from HuggingFace with your own token, you 
     t.save_pretrained(tokenizer_path)
 
     m = transformers.AutoModelForCausalLM.from_pretrained(model_id)
-    m.save_pretrained(model_weights_path)
+    m.save_pretrained(model_weights_path, safe_serialization=False, max_shard_size="100GB")
 
 Create a folder ``llama3_tokenizer`` and copy the tokenizer contents to it.
+
+
+Checkpoint Conversion
+^^^^^^^^^^^^^^^^^^^^^
+
+Follow this :ref:`Checkpoint Conversion Guide <checkpoint_conversion>` to convert the
+HF-style Llama3-8B checkpoint
+to NxDT supported format and store it in  ``pretrained_ckpt`` directory.
+
+.. code-block:: bash
+
+    cd neuronx-distributed-training/examples
+ 
+    python3 ./checkpoint_converter_scripts/checkpoint_converter.py --model_style hf \
+      --hw_backend trn1 \
+      --input_dir ~/llama3-8B_hf_weights/pytorch_model.bin \
+      --output_dir ~/pretrained_ckpt/ \
+      --save_xser True \
+      --config ~/config.json \
+      --tp_size 32 --pp_size 1 \
+      --n_layers 32 --kv_size_multiplier 4 --qkv_linear True \
+      --convert_from_full_stat
+  
+
+Modify the config parameter ``exp_manager.resume_from_checkpoint`` path to the
+converted pretrained checkpoint path.
+
+
+LoRA SFT-YAML Configuration Overview
+------------------------------------
+
 
 Modify the following paths in YAML file based on your specific directory configuration:
 
@@ -101,18 +142,6 @@ You can use your custom model, pretrained checkpoint and tokenizer by
 modifying the ``hf_llama3_8B_SFT_lora_config.yaml`` file.
 
 
-Checkpoint Conversion
-^^^^^^^^^^^^^^^^^^^^^
-
-Follow this :ref:`Checkpoint Conversion Guide <checkpoint_conversion>` to convert the
-HF-style Llama3-8B checkpoint
-to NxDT supported format and store it in  ``pretrained_ckpt`` directory.
-Modify the config parameter ``exp_manager.resume_from_checkpoint`` path to the
-converted pretrained checkpoint path.
-
-
-LoRA SFT-YAML Configuration Overview
-------------------------------------
 
 You can configure a variety of SFT, DPO, PEFT-specfic and model parameters for finetuning using the YAML file.
 
@@ -293,12 +322,7 @@ the compute graphs are first identified and extracted during a short simulated t
 and the extracted graphs are then compiled and cached using parallel compilation,
 which is considerably faster than the JIT flow.
 
-First, clone the open-source ``neuronx-distributed-training`` library
 
-.. code:: ipython3
-
-   git clone https://github.com/aws-neuron/neuronx-distributed-training
-   cd neuronx-distributed-training/examples
 
 Now, ensure that you are using the proper config file in the ``conf/`` directory.
 In the ``train.sh`` file, ensure that the ``CONF_FILE`` variable is properly
@@ -313,8 +337,9 @@ Next, run the following commands to launch an AOT pre-compilation job on your in
 .. code-block:: bash
 
     cd ~/neuronx-distributed-training/examples
+    export CONF_FILE=hf_llama3_8B_SFT_lora_config
     export COMPILE=1
-    ./train.sh
+    ./train.sh |& tee log_compile.txt
 
 The compile output and logs will be shown directly in the terminal
 and you will see logs similar to this:
@@ -344,7 +369,7 @@ On a single instance:
 .. code-block:: bash
 
     export COMPILE=0
-    ./train.sh
+    ./train.sh |& tee log_run.txt
 
 Once the model is loaded onto the Trainium accelerators and training has commenced,
 you will begin to see output indicating the job progress:
