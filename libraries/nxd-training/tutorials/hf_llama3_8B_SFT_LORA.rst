@@ -322,9 +322,7 @@ the compute graphs are first identified and extracted during a short simulated t
 and the extracted graphs are then compiled and cached using parallel compilation,
 which is considerably faster than the JIT flow.
 
-
-
-Now, ensure that you are using the proper config file in the ``conf/`` directory.
+Now, ensure that you are using the proper config file in the ``~/neuronx-distributed-training/examples/conf/`` directory.
 In the ``train.sh`` file, ensure that the ``CONF_FILE`` variable is properly
 set to the config for the model you want to use. In our case,
 it will be ``hf_llama3_8B_SFT_lora_config``. The default config here is a 8B parameter model,
@@ -337,6 +335,7 @@ Next, run the following commands to launch an AOT pre-compilation job on your in
 .. code-block:: bash
 
     cd ~/neuronx-distributed-training/examples
+
     export CONF_FILE=hf_llama3_8B_SFT_lora_config
     export COMPILE=1
     ./train.sh |& tee log_compile.txt
