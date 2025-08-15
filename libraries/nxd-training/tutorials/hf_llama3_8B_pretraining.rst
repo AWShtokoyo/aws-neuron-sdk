@@ -160,7 +160,6 @@ On a single instance:
 
 .. code-block:: bash
 
-    export CONF_FILE=hf_llama3_8B_config
     export COMPILE=0
     ./train.sh |& tee log_run.txt
 
