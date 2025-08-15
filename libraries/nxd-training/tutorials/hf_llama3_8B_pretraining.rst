@@ -17,6 +17,9 @@ Setting up the environment
 Install Dependencies
 ^^^^^^^^^^^^^^^^^^^^
 
+First, you can launch a Trn1 instance by following the Neuron DLAMI guide:
+`Neuron DLAMI User Guide <https://awsdocs-neuron.readthedocs-hosted.com/en/latest/dlami/index.html>`_.
+
 Once you have launched a Trn1 instance,
 please follow this guide on how to install the latest Neuron packages:
 `PyTorch Neuron Setup Guide
@@ -34,8 +37,20 @@ Let's download training-data scripts for our experiments
 
 .. code:: ipython3
 
+   cd ~/
    wget https://raw.githubusercontent.com/aws-neuron/neuronx-distributed/master/examples/training/llama/get_dataset.py
 
+Then, download the ``config.json`` file:
+
+For Llama-3-8B:
+
+.. code-block:: bash
+
+   wget https://raw.githubusercontent.com/aws-neuron/neuronx-distributed/master/examples/training/llama/tp_zero1_llama_hf_pretrain/8B_config_llama3/config.json ~/
+
+
+Download pretrained model checkpoint and tokenizer
+--------------------------------------------------
 
 To tokenize the data, we must request the tokenizer from Hugging Face and Meta by following the
 instructions at the following link: `HuggingFace Llama 3 8B Model <https://huggingface.co/meta-llama/Meta-Llama-3-8B>`__ . 
@@ -67,7 +82,8 @@ Next let’s download and pre-process the dataset:
 
 .. code:: ipython3
 
-   mkdir ~/examples_datasets/ && cd ~/examples_datasets/
+   cd ~/
+   mkdir ~/examples_datasets/
    python3 ~/get_dataset.py --llama-version 3
 
 
@@ -113,8 +129,9 @@ Next, run the following commands to launch an AOT pre-compilation job on your in
 
 .. code-block:: bash
 
+    export CONF_FILE=hf_llama3_8B_config
     export COMPILE=1
-    ./train.sh
+    ./train.sh |& tee log_compile.txt
 
 The compile output and logs will be shown directly in the terminal
 and you will see a message similar to this:
@@ -143,8 +160,9 @@ On a single instance:
 
 .. code-block:: bash
 
+    export CONF_FILE=hf_llama3_8B_config
     export COMPILE=0
-    ./train.sh
+    ./train.sh |& tee log_run.txt
 
 Once the model is loaded onto the Trainium accelerators and training has commenced,
 you will begin to see output indicating the job progress:
